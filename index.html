@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>(가상) 행정정보 통합관리 기본법 · 조항 카드 검색</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0b3a63;--blue:#1b4a7a;--mid:#3a6a9f;--line:#c9d6e4;--bg:#eef2f6;--card:#fff;--ink:#1a2633;--sub:#55677a;--hi:#ffe27a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+header{background:var(--navy);color:#fff;padding:40px 20px 28px}
+.wrap{max-width:1040px;margin:0 auto}
+header p{margin:0 0 6px;color:#b9cde3;font-size:14px}
+h1{margin:0;font-size:clamp(24px,4vw,36px);font-weight:700;line-height:1.3}
+.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:24px}
+.gallery figure{margin:0}
+.gallery img{width:100%;height:auto;display:block;border-radius:6px;background:var(--blue)}
+.gallery figcaption{font-size:13px;color:#b9cde3;margin-top:6px}
+.search{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:14px 20px}
+.search .wrap{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.search input{flex:1 1 260px;font:inherit;padding:10px 14px;border:2px solid var(--blue);border-radius:6px;background:#fff}
+.search input:focus-visible{outline:3px solid var(--hi);outline-offset:1px}
+#count{font-weight:700;color:var(--blue);min-width:80px}
+main{padding:24px 20px 60px}
+#cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:6px;padding:16px 18px}
+.no{margin:0;font-size:13px;font-weight:700;color:var(--mid)}
+.card h2{margin:2px 0 8px;font-size:19px;color:var(--navy)}
+.card p.body{margin:0;color:var(--ink);font-size:15px;white-space:pre-line}
+.card button{margin-top:10px;font:inherit;font-size:13px;color:var(--blue);background:none;border:1px solid var(--line);border-radius:4px;padding:3px 10px;cursor:pointer}
+.card button:focus-visible{outline:3px solid var(--hi)}
+mark{background:var(--hi);padding:0 1px}
+.msg{grid-column:1/-1;text-align:center;color:var(--sub);padding:40px 0}
+footer{padding:20px;text-align:center;font-size:13px;color:var(--sub)}
+@media(max-width:700px){.gallery{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p>가상 법령 · 실제 법령과 무관한 연습용 자료</p>
+    <h1>(가상) 행정정보 통합관리 기본법<br>조항 카드 검색</h1>
+    <div class="gallery">
+      <figure><img src="이미지/카드뉴스1.png" alt="카드뉴스 1: 기본법 구조" width="1080" height="1080"><figcaption>기본법 구조</figcaption></figure>
+      <figure><img src="이미지/카드뉴스2.png" alt="카드뉴스 2: 핵심 정의" width="1080" height="1080"><figcaption>핵심 정의</figcaption></figure>
+      <figure><img src="이미지/카드뉴스3.png" alt="카드뉴스 3: 국가 책무" width="1080" height="1080"><figcaption>국가 책무</figcaption></figure>
+      <figure><img src="이미지/카드뉴스4.png" alt="카드뉴스 4: 정보 보안" width="1080" height="1080"><figcaption>정보 보안</figcaption></figure>
+    </div>
+  </div>
+</header>
+
+<div class="search">
+  <div class="wrap">
+    <input id="q" type="search" placeholder="키워드 검색 (제목 또는 본문) 예: 기본계획" aria-label="키워드 검색" autocomplete="off">
+    <span id="count" role="status" aria-live="polite"></span>
+  </div>
+</div>
+
+<main>
+  <div class="wrap"><div id="cards"></div></div>
+</main>
+<footer>이 페이지는 조항데이터.json을 읽어 조항 카드를 표시합니다.</footer>
+
+<script>
+const SUMMARY_LEN = 60;
+let data = [];
+const $cards = document.getElementById('cards');
+const $count = document.getElementById('count');
+const $q = document.getElementById('q');
+
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function hl(text, kw){
+  const t = esc(text);
+  if(!kw) return t;
+  return t.replace(new RegExp('(' + reEsc(esc(kw)) + ')', 'gi'), '<mark>$1</mark>');
+}
+function summarize(body){
+  const flat = body.replace(/\s*\n\s*/g, ' ');
+  return flat.length > SUMMARY_LEN ? flat.slice(0, SUMMARY_LEN) + '…' : flat;
+}
+function render(){
+  const kw = $q.value.trim();
+  const list = data.filter(d => !kw || d['제목'].includes(kw) || d['본문'].includes(kw));
+  $count.textContent = '결과 ' + list.length + '건';
+  if(!list.length){ $cards.innerHTML = '<p class="msg">일치하는 조항이 없습니다.</p>'; return; }
+  $cards.innerHTML = '';
+  list.forEach(d => {
+    const long = d['본문'].replace(/\s*\n\s*/g,' ').length > SUMMARY_LEN;
+    const el = document.createElement('article');
+    el.className = 'card';
+    el.innerHTML = '<p class="no">' + hl(d['조'], kw) + '</p><h2>' + hl(d['제목'], kw) + '</h2>' +
+      '<p class="body">' + hl(summarize(d['본문']), kw) + '</p>' +
+      (long ? '<button type="button" aria-expanded="false">전체 보기</button>' : '');
+    if(long){
+      const btn = el.querySelector('button'), p = el.querySelector('.body');
+      let open = false;
+      btn.addEventListener('click', () => {
+        open = !open;
+        p.innerHTML = hl(open ? d['본문'] : summarize(d['본문']), kw);
+        btn.textContent = open ? '요약 보기' : '전체 보기';
+        btn.setAttribute('aria-expanded', open);
+      });
+    }
+    $cards.appendChild(el);
+  });
+}
+fetch('조항데이터.json')
+  .then(r => { if(!r.ok) throw new Error(r.status); return r.json(); })
+  .then(j => { data = j; render(); })
+  .catch(() => {
+    $count.textContent = '';
+    $cards.innerHTML = '<p class="msg">조항데이터.json을 불러오지 못했습니다. 웹 서버(Netlify 등)를 통해 열어 주세요.</p>';
+  });
+$q.addEventListener('input', render);
+</script>
+</body>
+</html>
